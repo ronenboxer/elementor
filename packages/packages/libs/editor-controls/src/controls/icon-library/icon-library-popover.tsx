@@ -9,6 +9,7 @@ import {
 	type VirtualizedItem,
 } from '@elementor/editor-ui';
 import { ComponentsIcon } from '@elementor/icons';
+import { useSessionStorage } from '@elementor/session';
 import { Box, CircularProgress, Divider, Link, Stack, styled, Typography } from '@elementor/ui';
 import { useDebounceState } from '@elementor/utils';
 import { __ } from '@wordpress/i18n';
@@ -22,11 +23,15 @@ import {
 } from './font-awesome-7-catalog';
 import { FontAwesomeGlyph } from './font-awesome-glyph';
 import { IconLibraryFilter } from './icon-library-filter';
+import { IconLibraryGrid } from './icon-library-grid';
+import { type IconLibraryView, IconLibraryViewToggle } from './icon-library-view-toggle';
 import { useFontAwesome7Catalog } from './use-font-awesome-7-catalog';
 
 export const ICON_LIBRARY_POPOVER_WIDTH = 300;
 export const ICON_LIBRARY_ROW_HEIGHT = 48;
 export const ICON_LIBRARY_SEARCH_DEBOUNCE_DELAY = 300;
+export const ICON_LIBRARY_VIEW_SESSION_KEY = 'icon-library-view';
+const DEFAULT_ICON_LIBRARY_VIEW: IconLibraryView = 'grid';
 const ICON_TILE_SIZE = 40;
 const ICON_GLYPH_SIZE = 20;
 const ICON_LIBRARY_INLINE_SPACING = 1;
@@ -63,6 +68,11 @@ export const IconLibraryPopover = ( {
 		setImmediateValue: setSearchValue,
 	} = useDebounceState( { delay: ICON_LIBRARY_SEARCH_DEBOUNCE_DELAY } );
 	const [ activeLibraries, setActiveLibraries ] = useState< FontAwesome7LibraryFilter >( [] );
+	const [ storedView, setStoredView ] = useSessionStorage< IconLibraryView >(
+		ICON_LIBRARY_VIEW_SESSION_KEY,
+		'editor-controls'
+	);
+	const activeView = isIconLibraryView( storedView ) ? storedView : DEFAULT_ICON_LIBRARY_VIEW;
 	const { data: icons = [], isLoading } = useFontAwesome7Catalog( open );
 
 	const items = useMemo(
@@ -103,6 +113,9 @@ export const IconLibraryPopover = ( {
 				title={ __( 'Icon library', 'elementor' ) }
 				onClose={ handleClose }
 				icon={ <ComponentsIcon fontSize="tiny" /> }
+				actions={ [
+					<IconLibraryViewToggle key="view-toggle" value={ activeView } onChange={ setStoredView } />,
+				] }
 				sx={ { pl: ICON_LIBRARY_INLINE_SPACING, pr: 0.5 } }
 			/>
 			<Stack direction="row" alignItems="center" gap={ 1 } sx={ { px: ICON_LIBRARY_INLINE_SPACING, pb: 1 } }>
@@ -120,6 +133,7 @@ export const IconLibraryPopover = ( {
 				<IconLibraryContent
 					isLoading={ isLoading }
 					items={ items }
+					view={ activeView }
 					selectedValue={ selectedValue }
 					searchValue={ searchValue }
 					isCatalogAvailable={ icons.length > 0 }
@@ -135,6 +149,7 @@ export const IconLibraryPopover = ( {
 type IconLibraryContentProps = {
 	isLoading: boolean;
 	items: IconLibraryItem[];
+	view: IconLibraryView;
 	selectedValue: string | undefined;
 	searchValue: string;
 	isCatalogAvailable: boolean;
@@ -146,6 +161,7 @@ type IconLibraryContentProps = {
 const IconLibraryContent = ( {
 	isLoading,
 	items,
+	view,
 	selectedValue,
 	searchValue,
 	isCatalogAvailable,
@@ -157,6 +173,27 @@ const IconLibraryContent = ( {
 		return <IconLibraryLoadingState />;
 	}
 
+	if ( items.length === 0 ) {
+		return (
+			<IconLibraryEmptyState
+				searchValue={ searchValue }
+				isCatalogAvailable={ isCatalogAvailable }
+				onClear={ onClearSearch }
+			/>
+		);
+	}
+
+	if ( view === 'grid' ) {
+		return (
+			<IconLibraryGrid
+				items={ items }
+				selectedValue={ selectedValue }
+				onSelect={ onSelect }
+				onClose={ onClose }
+			/>
+		);
+	}
+
 	return (
 		<PopoverMenuList
 			items={ items }
@@ -166,13 +203,6 @@ const IconLibraryContent = ( {
 			onClose={ onClose }
 			itemHeight={ ICON_LIBRARY_ROW_HEIGHT }
 			menuItemContentTemplate={ IconLibraryRow }
-			noResultsComponent={
-				<IconLibraryEmptyState
-					searchValue={ searchValue }
-					isCatalogAvailable={ isCatalogAvailable }
-					onClear={ onClearSearch }
-				/>
-			}
 			data-testid="icon-library-list"
 		/>
 	);
@@ -268,3 +298,6 @@ const createIconLibraryItems = (
 		type: 'item',
 		value: icon.id,
 	} ) );
+
+const isIconLibraryView = ( value: IconLibraryView | null | undefined ): value is IconLibraryView =>
+	value === 'grid' || value === 'list';

@@ -57,6 +57,7 @@
     "@elementor/ui": "1.37.5",
     "@elementor/utils": "4.4.0",
     "@elementor/wp-media": "4.4.0",
+    "@tanstack/react-virtual": "^3.13.3",
     "@monaco-editor/react": "^4.7.0",
     "@tiptap/extension-bold": "^3.11.1",
     "@tiptap/extension-document": "^3.11.1",

@@ -87,7 +87,7 @@ export const IconLibraryFilter = ( { value, onChange }: IconLibraryFilterProps )
 
 	return (
 		<>
-			<Tooltip title={ __( 'Filter by library', 'elementor' ) } placement="top">
+			<Tooltip title={ __( 'Filter by library', 'elementor' ) } placement="top" enterDelay={ 0 }>
 				<ToggleButton
 					aria-label={ filterButtonLabel }
 					value="filter"
